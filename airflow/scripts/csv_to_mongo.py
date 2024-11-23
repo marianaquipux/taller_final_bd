@@ -1,5 +1,6 @@
 import pandas as pd
 from pymongo import MongoClient
+import os
 
 # Parámetros de conexión MongoDB
 host = 'localhost'
@@ -23,3 +24,7 @@ def cargar_csv_a_mongo(csv_file_path, host, port, dbname):
 
 # Llamada a la función para cargar los datos
 cargar_csv_a_mongo(csv_file_path, host, port, dbname)
+
+os.remove(csv_file_path)
+
+print(f"Datos cargados exitosamente en la tabla 'medicamentos'.")

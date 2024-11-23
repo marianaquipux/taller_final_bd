@@ -1,5 +1,6 @@
 import pandas as pd
 from sqlalchemy import create_engine
+import os
 
 
 host = 'localhost'
@@ -16,5 +17,7 @@ df = pd.read_csv(csv_file_path)
 print(df)
 
 df.to_sql('medicamentos', engine, if_exists='replace', index=False)
+
+os.remove(csv_file_path)
 
 print(f"Datos cargados exitosamente en la tabla 'medicamentos'.")
