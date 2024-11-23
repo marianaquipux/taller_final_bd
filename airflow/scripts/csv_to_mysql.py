@@ -11,7 +11,7 @@ user = 'admin'  # Tu usuario de PostgreSQL
 password = 'root'  # Tu contraseña de PostgreSQL
 
 # Ruta del archivo CSV
-csv_file_path = 'scripts/mysql/extranjeros.csv'
+csv_file_path = 'scripts/datos/extranjeros.csv'
 
 # Crear conexión a PostgreSQL usando SQLAlchemy
 engine = create_engine(f'mysql+pymysql://{user}:{password}@{host}:{port}/{dbname}')

@@ -8,7 +8,7 @@ dbname = 'salazarPostgres'
 user = 'admin'
 password = 'root'
 
-csv_file_path = 'scripts/postgres/medicamentos.csv'
+csv_file_path = 'scripts/datos/medicamentos.csv'
 
 engine = create_engine(f'postgresql://{user}:{password}@{host}:{port}/{dbname}')
 

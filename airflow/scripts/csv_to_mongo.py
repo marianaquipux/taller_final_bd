@@ -5,7 +5,7 @@ from pymongo import MongoClient
 host = 'localhost'
 port = 27017 
 dbname = 'salazarPostgres'  
-csv_file_path = 'scripts/mongo/contratos.csv'  
+csv_file_path = 'scripts/datos/contratos.csv'  
 
 def cargar_csv_a_mongo(csv_file_path, host, port, dbname):
     df = pd.read_csv(csv_file_path)

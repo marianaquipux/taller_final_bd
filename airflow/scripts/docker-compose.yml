@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Servicio para MySQL
+  mysql:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: salazar
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: root
+      MYSQL_ALLOW_PUBLIC_KEY_RETRIEVAL: "false"
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+
+  # Servicio para PostgreSQL
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: salazarPostgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+
+  # Servicio para MongoDB
+  mongodb:
+    image: mongo:latest
+    container_name: mongo_container
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: root
+
+# Volúmenes definidos para persistir datos
+volumes:
+  mysql_data:
+    driver: local
+  postgres_data:
+    driver: local
+  mongo_data:
+    driver: local
