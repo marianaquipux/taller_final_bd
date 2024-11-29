@@ -3,13 +3,13 @@ from sqlalchemy import create_engine
 import os
 
 
-host = 'localhost'
-port = '5432'
+host = '192.168.1.65'
+port = '5433'
 dbname = 'salazarPostgres'
 user = 'admin'
 password = 'root'
 
-csv_file_path = 'scripts/datos/medicamentos.csv'
+csv_file_path = '/opt/airflow/scripts/datos/medicamentos.csv'
 
 engine = create_engine(f'postgresql://{user}:{password}@{host}:{port}/{dbname}')
 

@@ -3,16 +3,16 @@ from pymongo import MongoClient
 import os
 
 # Parámetros de conexión MongoDB
-host = 'localhost'
-port = 27017 
+host = '192.168.1.65'
+port = 27017
 dbname = 'salazarPostgres'  
-csv_file_path = 'scripts/datos/contratos.csv'  
+csv_file_path = '/opt/airflow/scripts/datos/contratos.csv'  
 
 def cargar_csv_a_mongo(csv_file_path, host, port, dbname):
-    df = pd.read_csv(csv_file_path)
     mongo_db = MongoClient(host=host, port=port)
     db = mongo_db[dbname]
     
+    df = pd.read_csv(csv_file_path)
     data_dict = df.to_dict(orient='records')
     
     # Seleccionar la colección (si no existe, se crea automáticamente)

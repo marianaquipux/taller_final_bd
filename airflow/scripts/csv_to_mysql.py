@@ -4,14 +4,14 @@ import json
 import os
 
 # Configuración de conexión a PostgreSQL
-host = 'localhost'  # Cambia si tu PostgreSQL está en otro host
-port = '3306'  # Puerto por defecto de PostgreSQL
+host = '192.168.1.65'  # Cambia si tu PostgreSQL está en otro host
+port = '3307'  # Puerto por defecto de PostgreSQL
 dbname = 'salazar'  # Nombre de la base de datos
 user = 'admin'  # Tu usuario de PostgreSQL
 password = 'root'  # Tu contraseña de PostgreSQL
 
 # Ruta del archivo CSV
-csv_file_path = 'scripts/datos/extranjeros.csv'
+csv_file_path = '/opt/airflow/scripts/datos/extranjeros.csv'
 
 # Crear conexión a PostgreSQL usando SQLAlchemy
 engine = create_engine(f'mysql+pymysql://{user}:{password}@{host}:{port}/{dbname}')

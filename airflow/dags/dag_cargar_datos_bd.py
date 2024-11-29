@@ -15,20 +15,46 @@ default_args = {
 
 # Definir el DAG
 dag = DAG(
-    'ejecutar_script_python',
+    'cargar_datos_bd',
     default_args=default_args,
-    description='Un DAG para ejecutar un script de Python cada 5 minutos',
-    schedule_interval='*/5 * * * *',  # Ejecutar cada 5 minutos
+    description='Un DAG para cargar datos de csv a bd',
     start_date=datetime(2024, 11, 21),
     catchup=False,
 )
 
-# Definir el comando bash para ejecutar el script Python
-bash_command_instruction = "python /opt/airflow/scripts/postgres_to_kafka.py"
+bash_command_instruction_listar = "ls -l /opt/airflow/scripts/datos"
+tarea1 = BashOperator(
+    task_id='listar_archivos_en_scripts',
+    bash_command=bash_command_instruction_listar,
+    dag=dag,
+)
 
-# Crear el BashOperator para ejecutar el script Python
-t1 = BashOperator(
-    task_id='ejecutar_python_script',
+bash_command_instruction = "python /opt/airflow/scripts/csv_to_mongo.py"
+tarea2_mongo = BashOperator(
+    task_id='cargar_a_mongo',
     bash_command=bash_command_instruction,
     dag=dag,
 )
+
+bash_command_instruction = "python /opt/airflow/scripts/csv_to_postgres.py"
+tarea2_postgres = BashOperator(
+    task_id='cargar_a_postgres',
+    bash_command=bash_command_instruction,
+    dag=dag,
+)
+
+bash_command_instruction = "python /opt/airflow/scripts/csv_to_mysql.py"
+tarea2_mysql = BashOperator(
+    task_id='cargar_a_mysql',
+    bash_command=bash_command_instruction,
+    dag=dag,
+)
+
+tarea3 = BashOperator(
+    task_id='listar_archivos_en_scripts',
+    bash_command=bash_command_instruction_listar,
+    dag=dag,
+)
+
+
+tarea1 >> tarea2_mongo >> tarea2_postgres >> tarea2_mysql >> tarea3
