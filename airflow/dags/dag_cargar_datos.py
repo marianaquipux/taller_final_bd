@@ -6,14 +6,13 @@ from datetime import datetime, timedelta
 # Definir el script a ejecutar
 #script_path = os.path.join(os.getenv("AIRFLOW_HOME"), 'scripts', 'postgres_to_kafka.py')
 
-# Definir los argumentos predeterminados para el DAG
+# Argumentos predeterminados para el DAG
 default_args = {
     'owner': 'airflow',
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
 }
 
-# Definir el DAG
 dag = DAG(
     'cargar_datos_bd',
     default_args=default_args,
@@ -24,7 +23,7 @@ dag = DAG(
 
 bash_command_instruction_listar = "ls -l /opt/airflow/scripts/datos"
 tarea1 = BashOperator(
-    task_id='listar_archivos_en_scripts',
+    task_id='listar_archivos_iniciales',
     bash_command=bash_command_instruction_listar,
     dag=dag,
 )
@@ -51,7 +50,7 @@ tarea2_mysql = BashOperator(
 )
 
 tarea3 = BashOperator(
-    task_id='listar_archivos_en_scripts',
+    task_id='listar_archivos_finales',
     bash_command=bash_command_instruction_listar,
     dag=dag,
 )
