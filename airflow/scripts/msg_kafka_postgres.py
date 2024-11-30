@@ -46,7 +46,9 @@ def obtener_registros_nuevos_postgres(**kwargs):
         
         # Enviar los registros nuevos al XCom
         kwargs['ti'].xcom_push(key='registros_nuevos', value=registros_nuevos)
+
         return registros_nuevos
+    
     except Exception as e:
         print(f"Error al obtener registros nuevos de PostgreSQL: {e}")
         raise
@@ -73,8 +75,9 @@ def enviar_a_kafka_postgres(**kwargs):
             value_serializer=lambda v: json.dumps(v).encode('utf-8')
         )
         
-        # Obtener registros nuevos desde XCom
-        registros_nuevos = kwargs['ti'].xcom_pull(key='registros_nuevos', task_ids='obtener_registros_nuevos')
+        # Obtener registros nuevos desde XCom 
+        registros_nuevos = kwargs['ti'].xcom_pull(key='registros_nuevos', task_ids='obtener_registros_nuevos_postgres')
+        print(registros_nuevos)
         
         # Enviar cada registro a Kafka
         for registro in registros_nuevos:
