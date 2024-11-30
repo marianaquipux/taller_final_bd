@@ -5,9 +5,9 @@ from datetime import datetime
 import json
 
 def obtener_registros_nuevos_mongo(**kwargs):
-    # Conexión a MongoDB
-    cliente_mongo = MongoClient("mongodb://usuario:contraseña@host:puerto")
-    db = cliente_mongo["nombre_base_datos"]
+    # Conexión a MongoDB con la URL original
+    cliente_mongo = MongoClient("mongodb://192.168.1.65:27017")
+    db = cliente_mongo["salazarPostgres"]
     coleccion = db["contratos"]  # Actualizado a "contratos"
     
     # Obtener el último conteo almacenado en una colección de metadatos
@@ -17,11 +17,13 @@ def obtener_registros_nuevos_mongo(**kwargs):
     
     # Obtener registros nuevos
     registros_nuevos = list(coleccion.find().skip(ultimo_conteo))
-    
+
+    # Convertir ObjectId a string
+    registros_nuevos = [str(registro['_id']) for registro in registros_nuevos]
+
     # Enviar registros nuevos a XCom
     kwargs['ti'].xcom_push(key='registros_nuevos', value=registros_nuevos)
     return registros_nuevos
-
 
 def enviar_a_kafka_mongo(**kwargs):
     # Configuración de Kafka
@@ -56,7 +58,7 @@ def enviar_a_kafka_mongo(**kwargs):
 
 
 def actualizar_conteos_mongo(**kwargs):
-    # Conexión a MongoDB
+    # Conexión a MongoDB con la URL original
     cliente_mongo = MongoClient("mongodb://192.168.1.65:27017")
     db = cliente_mongo["salazarPostgres"]
     coleccion = db["contratos"]  # Actualizado a "contratos"
