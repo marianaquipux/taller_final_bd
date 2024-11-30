@@ -2,7 +2,6 @@ from airflow.hooks.postgres_hook import PostgresHook
 import json
 from kafka import KafkaProducer, KafkaAdminClient
 from kafka.admin import NewTopic
-import json
 
 def obtener_registros_nuevos(**kwargs):
     conexion_postgres = PostgresHook(postgres_conn_id="conexion_postgres")
