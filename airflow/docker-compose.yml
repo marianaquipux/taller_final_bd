@@ -1,5 +1,4 @@
-x-airflow-common:
-  &airflow-common
+x-airflow-common: &airflow-common
   build: .
   environment:
     &airflow-common-env
@@ -8,21 +7,21 @@ x-airflow-common:
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-    # Se agrega el PYTHONPATH para que Airflow pueda encontrar los scripts
-    PYTHONPATH: /opt/airflow/scripts:$PYTHONPATH  # Ruta adicional para los scripts
-
+    PYTHONPATH: /opt/airflow/scripts:$PYTHONPATH
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
-    - ./scripts:/opt/airflow/scripts  # Asegura que los scripts estén disponibles en el contenedor
+    - ./scripts:/opt/airflow/scripts
   depends_on:
     - postgres
+    - zookeeper
+    - kafka1
 
 services:
-  # Servicio PostgreSQL para la base de datos de Airflow
   postgres:
     image: postgres:13
+    container_name: postgres
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
@@ -30,39 +29,72 @@ services:
     volumes:
       - postgres-volume:/var/lib/postgresql/data
     restart: always
+    networks:
+      - shared_network
 
-  # Webserver de Airflow
   airflow-webserver:
     <<: *airflow-common
     command: airflow webserver
     ports:
-      - 8080:8080  # Puerto donde se expone el UI de Airflow
+      - 8080:8080
     container_name: airflow_webserver
     restart: always
+    networks:
+      - shared_network
 
-  # Scheduler de Airflow
   airflow-scheduler:
     <<: *airflow-common
     command: airflow scheduler
     container_name: airflow_scheduler
     restart: always
+    networks:
+      - shared_network
 
-  # Inicialización de Airflow: crea el usuario admin y configura la base de datos
   airflow-init:
     <<: *airflow-common
     container_name: airflow_init
     entrypoint: /bin/bash
     command:
       - -c
-      - airflow users list || ( airflow db init &&
-        airflow users create
-          --role Admin
-          --username airflow
-          --password airflow
-          --email airflow@airflow.com
-          --firstname airflow
-          --lastname airflow )
+      - |
+        airflow db init &&
+        airflow users create \
+          --role Admin \
+          --username airflow \
+          --password airflow \
+          --email airflow@airflow.com \
+          --firstname airflow \
+          --lastname airflow
     restart: on-failure
+    networks:
+      - shared_network
+
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - shared_network
+
+  kafka1:
+    image: wurstmeister/kafka:latest
+    container_name: kafka1
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka1:9092,EXTERNAL://localhost:29092
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      
+    networks:
+      - shared_network
+
+networks:
+  shared_network:
+    driver: bridge
 
 volumes:
   postgres-volume:

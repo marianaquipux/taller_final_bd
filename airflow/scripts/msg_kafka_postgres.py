@@ -23,7 +23,7 @@ def obtener_registros_nuevos(**kwargs):
 
 def enviar_a_kafka(**kwargs):
     productor_kafka = KafkaProducer(
-        bootstrap_servers='localhost:9092',
+        bootstrap_servers='kafka1:9092',
         value_serializer=lambda v: json.dumps(v).encode('utf-8')
     )
     registros_nuevos = kwargs['ti'].xcom_pull(key='registros_nuevos', task_ids='obtener_registros_nuevos')
