@@ -2,6 +2,7 @@ from airflow.hooks.postgres_hook import PostgresHook
 import json
 from kafka import KafkaProducer, KafkaAdminClient
 from kafka.admin import NewTopic
+import datetime
 
 def verificar_y_crear_tabla_conteos_postgres():
     try:
@@ -23,13 +24,10 @@ def verificar_y_crear_tabla_conteos_postgres():
 
 def obtener_registros_nuevos_postgres(**kwargs):
     try:
-        # Verificar y crear la tabla si no existe
         verificar_y_crear_tabla_conteos_postgres()
 
-        # Conexión a PostgreSQL
         conexion_postgres = PostgresHook(postgres_conn_id="conexion_postgres")
         
-        # Consultar el último conteo de registros procesados
         consulta_ultimo_conteo = """
             SELECT cantidad_registros 
             FROM conteos 
@@ -39,12 +37,10 @@ def obtener_registros_nuevos_postgres(**kwargs):
         """
         ultimo_conteo = conexion_postgres.get_first(consulta_ultimo_conteo)
         ultimo_conteo = ultimo_conteo[0] if ultimo_conteo else 0
-        
-        # Obtener registros nuevos desde el último conteo
+      
         consulta_nuevos_registros = f"SELECT * FROM medicamentos OFFSET {ultimo_conteo};"
         registros_nuevos = conexion_postgres.get_records(consulta_nuevos_registros)
         
-        # Enviar los registros nuevos al XCom
         kwargs['ti'].xcom_push(key='registros_nuevos', value=registros_nuevos)
 
         return registros_nuevos
@@ -55,14 +51,12 @@ def obtener_registros_nuevos_postgres(**kwargs):
 
 def enviar_a_kafka_postgres(**kwargs):
     try:
-        # Configuración de Kafka
         bootstrap_servers = 'kafka1:9092'
         topico = 'postgres'
         
         admin_client = KafkaAdminClient(bootstrap_servers=bootstrap_servers)
         topics = admin_client.list_topics()
         
-        # Crear el tópico si no existe
         if topico not in topics:
             topic = NewTopic(name=topico, num_partitions=1, replication_factor=1)
             admin_client.create_topics(new_topics=[topic], validate_only=False)
@@ -75,11 +69,9 @@ def enviar_a_kafka_postgres(**kwargs):
             value_serializer=lambda v: json.dumps(v).encode('utf-8')
         )
         
-        # Obtener registros nuevos desde XCom 
         registros_nuevos = kwargs['ti'].xcom_pull(key='registros_nuevos', task_ids='obtener_registros_nuevos_postgres')
         print(registros_nuevos)
-        
-        # Enviar cada registro a Kafka
+
         for registro in registros_nuevos:
             productor_kafka.send(topico, registro)
         
@@ -89,25 +81,50 @@ def enviar_a_kafka_postgres(**kwargs):
         print(f"Error al enviar registros a Kafka: {e}")
         raise
 
+    
 def actualizar_conteos_postgres(**kwargs):
     try:
-        # Verificar y crear la tabla si no existe
         verificar_y_crear_tabla_conteos_postgres()
 
-        # Conexión a PostgreSQL
         conexion_postgres = PostgresHook(postgres_conn_id="conexion_postgres")
-        
-        # Consultar el total de registros en la tabla 'medicamentos'
+    
         consulta_total_registros = "SELECT COUNT(*) FROM medicamentos;"
         total_registros = conexion_postgres.get_first(consulta_total_registros)[0]
         
-        # Insertar el nuevo conteo en la tabla 'conteos'
         insertar_conteo = """
             INSERT INTO conteos (base_datos, tabla, cantidad_registros, ultima_actualizacion)
             VALUES ('postgres', 'medicamentos', %s, NOW());
         """
         conexion_postgres.run(insertar_conteo, parameters=(total_registros,))
-        print(f"Conteo actualizado en la tabla 'conteos': {total_registros} registros.")
+
+        bootstrap_servers = 'kafka1:9092'
+        topic = 'estadisticas'
+
+        admin_client = KafkaAdminClient(bootstrap_servers=bootstrap_servers)
+
+        topics = admin_client.list_topics()
+        if topic not in topics:
+            new_topic = NewTopic(name=topic, num_partitions=1, replication_factor=1)
+            admin_client.create_topics(new_topics=[new_topic], validate_only=False)
+            print(f"Tópico '{topic}' creado.")
+        else:
+            print(f"Tópico '{topic}' ya existe.")
+
+        productor_kafka = KafkaProducer(
+            bootstrap_servers=bootstrap_servers,
+            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        )
+
+        mensaje = {
+            "base_datos": "postgres",
+            "tabla": "medicamentos",
+            "cantidad_registros": total_registros,
+            "ultima_actualizacion": datetime.utcnow().isoformat()
+        }
+
+        productor_kafka.send(topic, mensaje)
+        productor_kafka.flush()
+
+        print(f"Conteo de PostgreSQL enviado a Kafka: {mensaje}")
     except Exception as e:
-        print(f"Error al actualizar los conteos en PostgreSQL: {e}")
-        raise
+        print(f"Error al actualizar el conteo en PostgreSQL: {e}")
